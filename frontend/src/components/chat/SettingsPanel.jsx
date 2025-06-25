@@ -1,9 +1,12 @@
-import React from 'react';
+
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
+import { FileText, Trash2, Loader2 } from 'lucide-react';
 
 const SettingsPanel = ({
   settings,
@@ -12,19 +15,56 @@ const SettingsPanel = ({
   isDarkMode
 }) => {
   const { toast } = useToast();
-  const handleDocUpload = () => {
-    toast({
-      title: "Bientôt disponible !",
-      description: "🚧 La base de connaissances personnelle arrive bientôt ! Vous pourrez uploader vos documents. 🚀",
-    });
-  }
+  const knowledgeFileInputRef = useRef(null);
+  const [isParsing, setIsParsing] = useState(false);
+
+  const handleKnowledgeUploadClick = () => {
+    knowledgeFileInputRef.current.click();
+  };
+
+  const handleKnowledgeFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    try {
+      let text = '';
+      if (file.type === 'application/pdf') {
+        const pdfParser = await import('pdf-parse');
+        const data = await pdfParser.default(await file.arrayBuffer());
+        text = data.text;
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        text = result.value;
+      } else if (file.type === 'text/plain') {
+        text = await file.text();
+      } else {
+        throw new Error("Type de fichier non supporté. Veuillez utiliser PDF, DOCX, ou TXT.");
+      }
+
+      setters.setKnowledgeBase(prev => [...prev, { id: uuidv4(), name: file.name, content: text.substring(0, 15000) }]);
+      toast({ title: "Document ajouté !", description: `${file.name} a été ajouté à votre base de connaissances.` });
+    } catch (error) {
+      console.error("Erreur de parsing:", error);
+      toast({ title: "Erreur de parsing", description: error.message, variant: 'destructive' });
+    } finally {
+      setIsParsing(false);
+      if(knowledgeFileInputRef.current) knowledgeFileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeleteKnowledgeDoc = (docId) => {
+    setters.setKnowledgeBase(prev => prev.filter(doc => doc.id !== docId));
+    toast({ title: "Document supprimé", description: "Le document a été retiré de votre base de connaissances." });
+  };
 
   return (
     <motion.div
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -300, opacity: 0 }}
-      className={`w-96 ${isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'} backdrop-blur-xl rounded-2xl p-6 border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'} h-fit flex flex-col`}
+      className={`w-96 ${isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'} backdrop-blur-xl rounded-2xl p-6 border ${isDarkMode ? 'border-slate-700' : 'border-slate-200'} h-fit flex flex-col overflow-y-auto`}
     >
       <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Paramètres</h3>
       
@@ -72,7 +112,7 @@ const SettingsPanel = ({
             step="0.1"
             value={settings.temperature}
             onChange={(e) => setters.setTemperature(parseFloat(e.target.value))}
-            className="w-full"
+            className="w-full accent-purple-500"
           />
         </div>
         
@@ -84,11 +124,11 @@ const SettingsPanel = ({
             id="maxTokens"
             type="range"
             min="256"
-            max="4096"
+            max="8192"
             step="256"
             value={settings.maxTokens}
             onChange={(e) => setters.setMaxTokens(parseInt(e.target.value))}
-            className="w-full"
+            className="w-full accent-purple-500"
           />
         </div>
       </div>
@@ -122,9 +162,30 @@ const SettingsPanel = ({
           <Label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
             Base de connaissances
           </Label>
-          <Button onClick={handleDocUpload} variant="outline" className="w-full">
-            Uploader des documents
+          <div className="space-y-2">
+            {settings.knowledgeBase.map(doc => (
+              <div key={doc.id} className={`flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
+                <div className="flex items-center space-x-2 overflow-hidden">
+                  <FileText className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  <span className={`text-sm truncate ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{doc.name}</span>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteKnowledgeDoc(doc.id)}>
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button onClick={handleKnowledgeUploadClick} variant="outline" className="w-full mt-2" disabled={isParsing}>
+            {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isParsing ? 'Analyse en cours...' : 'Uploader un document'}
           </Button>
+          <input
+            type="file"
+            ref={knowledgeFileInputRef}
+            onChange={handleKnowledgeFileChange}
+            className="hidden"
+            accept=".pdf,.docx,.txt"
+          />
         </div>
       </div>
 

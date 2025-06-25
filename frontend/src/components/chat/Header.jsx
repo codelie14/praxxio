@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Sun, Moon, Trash2, Upload, Download, Settings, LogOut, Users, Palette } from 'lucide-react';
+import { Sun, Moon, Trash2, Upload, Download, Settings, LogOut, Share2, PenLine, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -11,7 +11,9 @@ const Header = ({
   importChat,
   setShowSettings,
   onLogout,
-  activeChat
+  activeChat,
+  onShare,
+  onWhiteboard
 }) => {
   const importInputRef = useRef(null);
   const { toast } = useToast();
@@ -43,8 +45,11 @@ const Header = ({
         </h1>
       </div>
       <div className="flex items-center space-x-1">
-        <Button variant="ghost" size="icon" onClick={handleFeatureNotImplemented} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
-          <Users className="w-5 h-5" />
+        <Button variant="ghost" size="icon" onClick={onShare} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
+          <Share2 className="w-5 h-5" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onWhiteboard} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
+          <PenLine className="w-5 h-5" />
         </Button>
         <Button variant="ghost" size="icon" onClick={handleFeatureNotImplemented} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
           <Palette className="w-5 h-5" />

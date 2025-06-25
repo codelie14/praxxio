@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -9,13 +10,6 @@ export const useChatAPI = (settings, setters, activeChat, updateChat, attachedFi
   const handleSendMessage = useCallback(async (messageContent) => {
     const currentMessage = typeof messageContent === 'string' ? messageContent : inputMessage;
     if ((!currentMessage.trim() && !attachedFile) || isLoading || !activeChat?.id) return;
-
-    if (settings.plugins.expertMode) {
-      toast({
-        title: "Mode Expert Activé",
-        description: "🚧 Cette fonctionnalité n'est pas encore implémentée, mais ne vous inquiétez pas ! Vous pouvez la demander dans votre prochain message ! 🚀",
-      });
-    }
 
     if (!settings.apiKey) {
       toast({
@@ -45,8 +39,25 @@ export const useChatAPI = (settings, setters, activeChat, updateChat, attachedFi
     setIsLoading(true);
 
     try {
+      const systemPromptParts = [];
+
+      if (settings.longTermMemory?.trim()) {
+        systemPromptParts.push(`--- MEMOIRE A LONG TERME DE L'UTILISATEUR ---\n${settings.longTermMemory}\n--- FIN MEMOIRE ---`);
+      }
+
+      if (settings.knowledgeBase?.length > 0) {
+        const knowledgeText = settings.knowledgeBase.map(doc => `DOCUMENT: ${doc.name}\nCONTENU:\n${doc.content}`).join('\n\n');
+        systemPromptParts.push(`--- BASE DE CONNAISSANCES ---\nUtilise les informations suivantes de la base de connaissances personnelle de l'utilisateur pour répondre à sa question. Fais référence aux documents si nécessaire.\n${knowledgeText}\n--- FIN CONNAISSANCES ---`);
+      }
+
+      if (settings.plugins.expertMode) {
+        systemPromptParts.push("INSTRUCTION SPECIALE: Pense étape par étape (Chain-of-Thought). Explique ton raisonnement de manière claire et structurée avant de donner la réponse finale. Utilise le formatage Markdown pour la clarté.");
+      }
+
+      const systemPrompt = systemPromptParts.join('\n\n');
+
       const currentChatState = { ...activeChat, messages: [...activeChat.messages, userMessage]};
-      const apiMessages = currentChatState.messages
+      let apiMessages = currentChatState.messages
         .filter(m => m.type === 'user' || m.type === 'bot' || m.type === 'assistant')
         .map(m => {
           const contentParts = [];
@@ -68,6 +79,10 @@ export const useChatAPI = (settings, setters, activeChat, updateChat, attachedFi
             content: contentParts.length === 1 && contentParts[0].type === 'text' ? contentParts[0].text : contentParts
           };
       }).filter(Boolean);
+
+      if (systemPrompt) {
+        apiMessages.unshift({ role: 'system', content: systemPrompt });
+      }
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',

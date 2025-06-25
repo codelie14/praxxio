@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,6 +13,7 @@ export const useSettings = () => {
   const [maxTokens, setMaxTokens] = useLocalStorage('praxxio_max_tokens', 2048);
   const [plugins, setPlugins] = useLocalStorage('praxxio_plugins', { expertMode: false });
   const [longTermMemory, setLongTermMemory] = useLocalStorage('praxxio_long_term_memory', '');
+  const [knowledgeBase, setKnowledgeBase] = useLocalStorage('praxxio_knowledge_base', []);
   
   const settings = {
     isDarkMode,
@@ -22,6 +24,7 @@ export const useSettings = () => {
     maxTokens,
     plugins,
     longTermMemory,
+    knowledgeBase
   };
   
   const setters = {
@@ -32,7 +35,8 @@ export const useSettings = () => {
     setTemperature,
     setMaxTokens,
     setPlugins,
-    setLongTermMemory
+    setLongTermMemory,
+    setKnowledgeBase
   };
 
   const saveSettings = useCallback(() => {
