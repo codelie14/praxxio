@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
-import { Sun, Moon, Trash2, Upload, Download, Settings, LogOut } from 'lucide-react';
+import { Sun, Moon, Trash2, Upload, Download, Settings, LogOut, Users, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 const Header = ({
   isDarkMode,
@@ -13,6 +14,14 @@ const Header = ({
   activeChat
 }) => {
   const importInputRef = useRef(null);
+  const { toast } = useToast();
+
+  const handleFeatureNotImplemented = () => {
+    toast({
+      title: "Bientôt disponible !",
+      description: "🚧 Cette fonctionnalité n'est pas encore implémentée, mais ne vous inquiétez pas ! Vous pouvez la demander dans votre prochain message ! 🚀",
+    });
+  };
 
   const handleImportClick = () => {
     importInputRef.current.click();
@@ -33,7 +42,14 @@ const Header = ({
           {activeChat?.title || 'PRAXXIO'}
         </h1>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1">
+        <Button variant="ghost" size="icon" onClick={handleFeatureNotImplemented} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
+          <Users className="w-5 h-5" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={handleFeatureNotImplemented} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
+          <Palette className="w-5 h-5" />
+        </Button>
+        <div className="border-l h-6 mx-2 border-slate-300 dark:border-slate-700"></div>
         <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
           {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </Button>

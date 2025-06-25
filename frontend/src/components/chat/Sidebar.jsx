@@ -1,9 +1,19 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { PlusSquare, MessageSquare, Trash2 } from 'lucide-react';
+import { PlusSquare, MessageSquare, Trash2, Users } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 const Sidebar = ({ chats, activeChatId, onNewChat, onSelectChat, onDeleteChat, isDarkMode }) => {
+  const { toast } = useToast();
+
+  const handleJoinClick = () => {
+    toast({
+      title: "Bientôt disponible !",
+      description: "🚧 Les salles de chat thématiques arrivent bientôt ! 🚀",
+    });
+  };
+
   return (
     <motion.div
       initial={{ x: -300 }}
@@ -17,7 +27,17 @@ const Sidebar = ({ chats, activeChatId, onNewChat, onSelectChat, onDeleteChat, i
           Nouvelle Conversation
         </Button>
       </div>
+
+      <div className="p-4 border-b border-inherit">
+        <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Espaces collaboratifs</h3>
+        <Button onClick={handleJoinClick} variant="outline" className="w-full">
+          <Users className="w-5 h-5 mr-2" />
+          Rejoindre une salle
+        </Button>
+      </div>
+
       <div className="flex-1 overflow-y-auto p-2">
+        <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 px-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Conversations</h3>
         <AnimatePresence>
           {chats.map(chat => (
             <motion.div
@@ -55,7 +75,7 @@ const Sidebar = ({ chats, activeChatId, onNewChat, onSelectChat, onDeleteChat, i
         </AnimatePresence>
       </div>
       <div className="p-4 border-t border-inherit text-center">
-        <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>PRAXXIO v1.0</p>
+        <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>PRAXXIO v1.1</p>
       </div>
     </motion.div>
   );

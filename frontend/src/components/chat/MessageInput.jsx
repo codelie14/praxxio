@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Send, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,7 +56,7 @@ const MessageInput = ({
           ref={fileInputRef}
           onChange={onFileChange}
           className="hidden"
-          accept="image/*"
+          accept="image/*,.pdf,.doc,.docx,.txt"
         />
         <textarea
           value={inputMessage}
