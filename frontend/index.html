@@ -1,14 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 	<head>
 		<meta charset="UTF-8" />
+		
+		<!-- Favicon et icônes -->
 		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
-		<meta name="generator" content="Hostinger Horizons" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+		
+		<!-- Meta viewport et responsive -->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hostinger Horizons</title>
+		
+		<!-- SEO Meta Tags -->
+		<title>PRAXXIO - Votre Assistant IA Personnel, Collaboratif et Intelligent</title>
+		<meta name="description" content="PRAXXIO est votre assistant IA personnel utilisant des modèles avancés comme Llama 3.3 70B. Chat intelligent, interface moderne, mode expert et fonctionnalités collaboratives." />
+		<meta name="keywords" content="assistant IA, chat IA, intelligence artificielle, Llama 3.3, OpenRouter, assistant personnel, IA collaborative, markdown, chain-of-thought" />
+		<meta name="author" content="Archange Elie Yatte" />
+		<meta name="robots" content="index, follow" />
+		<meta name="language" content="fr" />
+		
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://praxxio.com/" />
+		<meta property="og:title" content="PRAXXIO - Votre Assistant IA Personnel, Collaboratif et Intelligent" />
+		<meta property="og:description" content="Conversez avec des modèles IA de pointe, gérez vos connaissances et collaborez intelligemment avec PRAXXIO." />
+		<meta property="og:image" content="https://praxxio.com/og-image.png" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:locale" content="fr_FR" />
+		<meta property="og:site_name" content="PRAXXIO" />
+		
+		<!-- Twitter Card -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content="https://praxxio.com/" />
+		<meta property="twitter:title" content="PRAXXIO - Votre Assistant IA Personnel, Collaboratif et Intelligent" />
+		<meta property="twitter:description" content="Conversez avec des modèles IA de pointe, gérez vos connaissances et collaborez intelligemment avec PRAXXIO." />
+		<meta property="twitter:image" content="https://praxxio.com/twitter-image.png" />
+		<meta property="twitter:creator" content="@codelie14" />
+		
+		<!-- Liens canoniques et hreflang -->
+		<link rel="canonical" href="https://praxxio.com/" />
+		<link rel="alternate" hreflang="fr" href="https://praxxio.com/" />
+		<link rel="alternate" hreflang="en" href="https://praxxio.com/en/" />
+		<link rel="alternate" hreflang="x-default" href="https://praxxio.com/" />
+		
+		<!-- Schema.org JSON-LD -->
+		<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "WebApplication",
+			"name": "PRAXXIO",
+			"description": "Assistant IA personnel, collaboratif et intelligent utilisant des modèles de langage avancés",
+			"url": "https://praxxio.com",
+			"applicationCategory": "ProductivityApplication",
+			"operatingSystem": "Web Browser",
+			"offers": {
+				"@type": "Offer",
+				"price": "0",
+				"priceCurrency": "EUR"
+			},
+			"author": {
+				"@type": "Person",
+				"name": "Archange Elie Yatte",
+				"email": "codelie14@gmail.com",
+				"url": "https://github.com/codelie14"
+			},
+			"featureList": [
+				"Chat intelligent avec IA",
+				"Interface moderne et responsive",
+				"Support Markdown",
+				"Mode Expert avec Chain-of-Thought",
+				"Gestion des conversations",
+				"Base de connaissances",
+				"Fonctionnalités collaboratives"
+			],
+			"screenshot": "https://praxxio.com/screenshot.png",
+			"softwareVersion": "1.0",
+			"datePublished": "2024-01-01",
+			"inLanguage": "fr"
+		}
+		</script>
+		
+		<!-- Performance et sécurité -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="theme-color" content="#000000" />
+		<meta name="msapplication-TileColor" content="#000000" />
+		<meta name="msapplication-config" content="/browserconfig.xml" />
+		
+		<!-- Preconnect pour optimiser les performances -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="preconnect" href="https://openrouter.ai" />
+		
+		<!-- DNS Prefetch -->
+		<link rel="dns-prefetch" href="//fonts.googleapis.com" />
+		<link rel="dns-prefetch" href="//fonts.gstatic.com" />
+		<link rel="dns-prefetch" href="//openrouter.ai" />
+		
+		<!-- CSS Critiques (à ajouter inline si nécessaire) -->
+		<style>
+			/* Critical CSS pour éviter le FOUC */
+			body {
+				margin: 0;
+				padding: 0;
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+			}
+			#root {
+				min-height: 100vh;
+			}
+		</style>
 	</head>
 	<body>
 		<div id="root"></div>
 		<script type="module" src="/src/main.jsx"></script>
+		
+		<!-- Analytics (à remplacer par votre code) -->
+		<!-- Google Analytics 4 -->
+		<!--
+		<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'GA_MEASUREMENT_ID');
+		</script>
+		-->
 	</body>
 </html>
