@@ -1,14 +1,16 @@
-
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 import Header from '@/components/chat/Header';
 import SettingsPanel from '@/components/chat/SettingsPanel';
 import ChatView from '@/components/chat/ChatView';
+import Sidebar from '@/components/chat/Sidebar';
 
 const ChatPage = ({ onLogout }) => {
-  const [messages, setMessages] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -23,47 +25,105 @@ const ChatPage = ({ onLogout }) => {
   const messagesEndRef = useRef(null);
   const { toast } = useToast();
 
+  const createNewChat = useCallback(() => {
+    const newChat = {
+      id: uuidv4(),
+      title: 'Nouvelle Conversation',
+      messages: [{
+        id: 1,
+        type: 'bot',
+        content: "Bonjour ! Je suis votre assistant IA PRAXXIO. Comment puis-je vous aider aujourd'hui ?",
+        timestamp: new Date()
+      }],
+      createdAt: new Date().toISOString()
+    };
+    return newChat;
+  }, []);
+
   useEffect(() => {
     const savedApiKey = localStorage.getItem('openrouter_api_key') || '';
     setApiKey(savedApiKey);
 
-    let initialMessages = [];
-    const savedMessages = localStorage.getItem('praxxio_messages');
-    if (savedMessages) {
+    let loadedChats = [];
+    const savedChats = localStorage.getItem('praxxio_chats');
+    if (savedChats) {
         try {
-            const parsed = JSON.parse(savedMessages);
+            const parsed = JSON.parse(savedChats);
             if (Array.isArray(parsed)) {
-                initialMessages = parsed.map(msg => ({
-                    ...msg,
-                    timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+                loadedChats = parsed.map(chat => ({
+                    ...chat,
+                    messages: chat.messages.map(msg => ({
+                        ...msg,
+                        timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+                    }))
                 }));
             }
         } catch (error) {
-            console.error("Failed to parse messages from localStorage", error);
-            localStorage.removeItem('praxxio_messages');
+            console.error("Failed to parse chats from localStorage", error);
+            localStorage.removeItem('praxxio_chats');
         }
     }
 
-    if (initialMessages.length === 0) {
-        initialMessages.push({
-            id: 1,
-            type: 'bot',
-            content: "Bonjour ! Je suis votre assistant IA PRAXXIO. Comment puis-je vous aider aujourd'hui ?\n\nVous pouvez me demander de faire beaucoup de choses, comme :\n*   Rédiger un e-mail\n*   Écrire un poème\n*   Traduire un texte\n*   Expliquer un concept complexe\n*   Générer du code dans n'importe quel langage",
-            timestamp: new Date()
-        });
+    if (loadedChats.length === 0) {
+        const firstChat = createNewChat();
+        loadedChats.push(firstChat);
+        setActiveChatId(firstChat.id);
+    } else {
+        const lastActiveId = localStorage.getItem('praxxio_active_chat_id');
+        if (lastActiveId && loadedChats.some(c => c.id === lastActiveId)) {
+            setActiveChatId(lastActiveId);
+        } else {
+            setActiveChatId(loadedChats[0].id);
+        }
     }
-    setMessages(initialMessages);
-  }, []);
+    setChats(loadedChats);
+  }, [createNewChat]);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('praxxio_messages', JSON.stringify(messages));
+    if (chats.length > 0) {
+      localStorage.setItem('praxxio_chats', JSON.stringify(chats));
     }
-  }, [messages]);
+    if (activeChatId) {
+      localStorage.setItem('praxxio_active_chat_id', activeChatId);
+    }
+  }, [chats, activeChatId]);
+
+  const activeChat = useMemo(() => chats.find(c => c.id === activeChatId), [chats, activeChatId]);
+  const messages = useMemo(() => activeChat?.messages || [], [activeChat]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleNewChat = useCallback(() => {
+    const newChat = createNewChat();
+    setChats(prev => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
+  }, [createNewChat]);
+
+  const handleSelectChat = useCallback((chatId) => {
+    setActiveChatId(chatId);
+  }, []);
+
+  const handleDeleteChat = useCallback((chatId) => {
+    setChats(prev => {
+      const newChats = prev.filter(c => c.id !== chatId);
+      if (activeChatId === chatId) {
+        if (newChats.length > 0) {
+          setActiveChatId(newChats[0].id);
+        } else {
+          const freshChat = createNewChat();
+          newChats.push(freshChat);
+          setActiveChatId(freshChat.id);
+        }
+      }
+      return newChats;
+    });
+    toast({
+      title: "Conversation supprimée",
+      description: "La conversation a été supprimée avec succès."
+    });
+  }, [activeChatId, createNewChat, toast]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -91,7 +151,7 @@ const ChatPage = ({ onLogout }) => {
 
   const handleSendMessage = useCallback(async (messageContent) => {
     const currentMessage = typeof messageContent === 'string' ? messageContent : inputMessage;
-    if ((!currentMessage.trim() && !attachedFile) || isLoading) return;
+    if ((!currentMessage.trim() && !attachedFile) || isLoading || !activeChatId) return;
     
     if (plugins.calculator || plugins.webSearch) {
       toast({
@@ -118,14 +178,22 @@ const ChatPage = ({ onLogout }) => {
       timestamp: new Date()
     };
 
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    const isFirstUserMessage = activeChat.messages.filter(m => m.type === 'user').length === 0;
+    const newTitle = isFirstUserMessage ? currentMessage.substring(0, 40) + (currentMessage.length > 40 ? '...' : '') : activeChat.title;
+
+    setChats(prev => prev.map(chat => 
+      chat.id === activeChatId 
+        ? { ...chat, title: newTitle, messages: [...chat.messages, userMessage] }
+        : chat
+    ));
+    
     setInputMessage('');
     setAttachedFile(null);
     setIsLoading(true);
 
     try {
-      const apiMessages = updatedMessages.map(m => {
+      const currentChat = chats.find(c => c.id === activeChatId);
+      const apiMessages = [...currentChat.messages, userMessage].map(m => {
         const contentParts = [];
         if (m.content && m.content.trim() !== '') {
           contentParts.push({ type: 'text', text: m.content });
@@ -134,7 +202,7 @@ const ChatPage = ({ onLogout }) => {
           contentParts.push({ type: 'image_url', image_url: { url: m.imageUrl } });
         }
 
-        if (m.type === 'bot' || m.type === 'assistant') { // assistant is legacy
+        if (m.type === 'bot' || m.type === 'assistant') {
           return { role: 'assistant', content: m.content };
         }
 
@@ -178,7 +246,11 @@ const ChatPage = ({ onLogout }) => {
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setChats(prev => prev.map(chat => 
+        chat.id === activeChatId 
+          ? { ...chat, messages: [...chat.messages, botMessage] }
+          : chat
+      ));
       
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
@@ -187,28 +259,20 @@ const ChatPage = ({ onLogout }) => {
         description: `Impossible d'envoyer le message. ${error.message}`,
         variant: "destructive"
       });
-      setMessages(prev => prev.slice(0, -1));
+      setChats(prev => prev.map(chat => 
+        chat.id === activeChatId 
+          ? { ...chat, messages: chat.messages.slice(0, -1) }
+          : chat
+      ));
     } finally {
       setIsLoading(false);
     }
-  }, [inputMessage, attachedFile, isLoading, apiKey, messages, model, temperature, maxTokens, toast, plugins]);
-
-  const clearChat = useCallback(() => {
-    setMessages([{
-      id: 1,
-      type: 'bot',
-      content: 'Bonjour ! Je suis votre assistant IA PRAXXIO. Comment puis-je vous aider aujourd\'hui ?',
-      timestamp: new Date()
-    }]);
-    toast({
-      title: "Chat effacé",
-      description: "L'historique des messages a été supprimé."
-    });
-  }, [toast]);
+  }, [inputMessage, attachedFile, isLoading, apiKey, activeChatId, chats, model, temperature, maxTokens, toast, plugins, activeChat]);
 
   const exportChat = useCallback(() => {
+    if (!activeChat) return;
     const chatData = {
-      messages: messages,
+      ...activeChat,
       exportDate: new Date().toISOString(),
       settings: { model, temperature, maxTokens }
     };
@@ -217,7 +281,7 @@ const ChatPage = ({ onLogout }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `praxxio-chat-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `praxxio-chat-${activeChat.title.replace(/\s/g, '_')}-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -225,9 +289,9 @@ const ChatPage = ({ onLogout }) => {
     
     toast({
       title: "Chat exporté",
-      description: "L'historique a été téléchargé avec succès."
+      description: "La conversation active a été téléchargée."
     });
-  }, [messages, model, temperature, maxTokens, toast]);
+  }, [activeChat, model, temperature, maxTokens, toast]);
 
   const importChat = useCallback((file) => {
     if (!file) return;
@@ -237,11 +301,18 @@ const ChatPage = ({ onLogout }) => {
       try {
         const chatData = JSON.parse(e.target.result);
         if (chatData && Array.isArray(chatData.messages)) {
-          const importedMessages = chatData.messages.map(msg => ({
-            ...msg,
-            timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
-          }));
-          setMessages(importedMessages);
+          const newChat = {
+            id: chatData.id || uuidv4(),
+            title: chatData.title || 'Chat Importé',
+            createdAt: chatData.createdAt || new Date().toISOString(),
+            messages: chatData.messages.map(msg => ({
+              ...msg,
+              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+            }))
+          };
+          setChats(prev => [newChat, ...prev]);
+          setActiveChatId(newChat.id);
+          
           if (chatData.settings) {
             setModel(chatData.settings.model || 'meta-llama/llama-3.3-70b-instruct');
             setTemperature(chatData.settings.temperature || 0.7);
@@ -249,7 +320,7 @@ const ChatPage = ({ onLogout }) => {
           }
           toast({
             title: "Chat importé",
-            description: "L'historique a été restauré avec succès."
+            description: "L'historique a été importé comme une nouvelle conversation."
           });
         } else {
             throw new Error("Format de fichier de chat invalide.");
@@ -275,51 +346,64 @@ const ChatPage = ({ onLogout }) => {
   }, [apiKey, toast]);
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'}`}>
+    <div className={`min-h-screen transition-all duration-500 flex ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'}`}>
       <Helmet>
         <title>PRAXXIO - Assistant IA Intelligent</title>
         <meta name="description" content="PRAXXIO est votre assistant IA personnel avec chat intelligent utilisant Llama 3.3 70B Instruct pour des conversations naturelles et contextuelles." />
       </Helmet>
 
-      <Header
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        onNewChat={handleNewChat}
+        onSelectChat={handleSelectChat}
+        onDeleteChat={handleDeleteChat}
         isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
-        clearChat={clearChat}
-        exportChat={exportChat}
-        importChat={importChat}
-        setShowSettings={setShowSettings}
-        onLogout={onLogout}
       />
 
-      <main className="max-w-6xl mx-auto px-4 py-6 flex gap-6">
-        <AnimatePresence>
-          {showSettings && (
-            <SettingsPanel
-              apiKey={apiKey} setApiKey={setApiKey}
-              model={model} setModel={setModel}
-              temperature={temperature} setTemperature={setTemperature}
-              maxTokens={maxTokens} setMaxTokens={setMaxTokens}
-              saveApiKey={saveApiKey}
-              isDarkMode={isDarkMode}
-              plugins={plugins}
-              setPlugins={setPlugins}
-            />
-          )}
-        </AnimatePresence>
-
-        <ChatView
-          messages={messages}
-          isLoading={isLoading}
+      <div className="flex-1 flex flex-col">
+        <Header
           isDarkMode={isDarkMode}
-          messagesEndRef={messagesEndRef}
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          handleSendMessage={handleSendMessage}
-          attachedFile={attachedFile}
-          onFileChange={handleFileSelect}
-          onRemoveFile={removeAttachedFile}
+          setIsDarkMode={setIsDarkMode}
+          deleteCurrentChat={() => handleDeleteChat(activeChatId)}
+          exportChat={exportChat}
+          importChat={importChat}
+          setShowSettings={setShowSettings}
+          onLogout={onLogout}
+          activeChat={activeChat}
         />
-      </main>
+
+        <main className="flex-1 max-w-6xl mx-auto px-4 pb-6 flex gap-6 w-full">
+          <AnimatePresence>
+            {showSettings && (
+              <SettingsPanel
+                apiKey={apiKey} setApiKey={setApiKey}
+                model={model} setModel={setModel}
+                temperature={temperature} setTemperature={setTemperature}
+                maxTokens={maxTokens} setMaxTokens={setMaxTokens}
+                saveApiKey={saveApiKey}
+                isDarkMode={isDarkMode}
+                plugins={plugins}
+                setPlugins={setPlugins}
+              />
+            )}
+          </AnimatePresence>
+
+          <ChatView
+            messages={messages}
+            isLoading={isLoading}
+            isDarkMode={isDarkMode}
+            messagesEndRef={messagesEndRef}
+            inputMessage={inputMessage}
+            setInputMessage={setInputMessage}
+            handleSendMessage={handleSendMessage}
+            attachedFile={attachedFile}
+            onFileChange={handleFileSelect}
+            onRemoveFile={removeAttachedFile}
+            activeChat={activeChat}
+          />
+        </main>
+      </div>
     </div>
   );
 };

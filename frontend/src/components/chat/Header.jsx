@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 const Header = ({
   isDarkMode,
   setIsDarkMode,
-  clearChat,
+  deleteCurrentChat,
   exportChat,
   importChat,
   setShowSettings,
-  onLogout
+  onLogout,
+  activeChat
 }) => {
   const importInputRef = useRef(null);
 
@@ -28,13 +29,15 @@ const Header = ({
   return (
     <header className="bg-transparent p-4 flex justify-between items-center">
       <div className="flex items-center">
-        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>PRAXXIO</h1>
+        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+          {activeChat?.title || 'PRAXXIO'}
+        </h1>
       </div>
       <div className="flex items-center space-x-2">
         <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
           {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </Button>
-        <Button variant="ghost" size="icon" onClick={clearChat} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
+        <Button variant="ghost" size="icon" onClick={deleteCurrentChat} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>
           <Trash2 className="w-5 h-5" />
         </Button>
         <Button variant="ghost" size="icon" onClick={exportChat} className={`${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}>

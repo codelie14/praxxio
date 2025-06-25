@@ -23,7 +23,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('praxxio_authenticated');
-    localStorage.removeItem('praxxio_messages');
+    localStorage.removeItem('praxxio_chats');
     localStorage.removeItem('openrouter_api_key');
     setIsAuthenticated(false);
   };

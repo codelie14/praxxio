@@ -13,7 +13,8 @@ const ChatView = ({
   handleSendMessage,
   attachedFile,
   onFileChange,
-  onRemoveFile
+  onRemoveFile,
+  activeChat
 }) => {
   const handleQuickAction = (prompt) => {
     setInputMessage(prompt);
@@ -27,7 +28,7 @@ const ChatView = ({
         isDarkMode={isDarkMode}
         messagesEndRef={messagesEndRef}
       />
-      {!messages.some(m => m.type === 'user') && !isLoading && (
+      {activeChat && activeChat.messages.length <= 1 && !isLoading && (
         <QuickActions onAction={handleQuickAction} />
       )}
       <MessageInput
